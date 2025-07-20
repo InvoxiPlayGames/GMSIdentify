@@ -1,0 +1,77 @@
+<title>GMSIdentifyJS</title>
+<script src="gmsidentify.js"></script>
+<script>
+var xmlHttp;
+function LoadDatabase(url) {
+    xmlHttp = new XMLHttpRequest();
+    xmlHttp.onreadystatechange = ImportDatabaseWhenReady;
+    xmlHttp.open("GET", url, true);
+    xmlHttp.send(null);
+}
+function ImportDatabaseWhenReady() {
+    if (xmlHttp.readyState == 4 && xmlHttp.status == 200) {
+        GMSIdentify_ImportDatabase(xmlHttp.responseText);
+        document.getElementById("filepicker").disabled = false;
+        document.getElementById("metadata").innerHTML = "";
+    }
+}
+function OpenFile(event) {
+    // clear any information already stored
+    document.getElementById("metadata").innerHTML = "Loading...";
+    document.getElementById("versioninfo").innerHTML = "";
+    GMSIdentify_ResetIdentify();
+
+    // load the file as an arraybuffer and send it to the library
+    var input = event.target;
+    var reader = new FileReader();
+    reader.onload = function() {
+       GMSIdentify_FromArrayBuffer(reader.result);
+       DisplayResults();
+    };
+    if (input.files[0].size < 20000000) {
+        reader.readAsArrayBuffer(input.files[0]);
+    } else {
+        document.getElementById("metadata").innerHTML = "<b>Error:</b> File is too large, this is either a data file or a YYC game!";
+    }
+};
+function DisplayResults() {
+    // check if the GMSIdentify "library" had an error
+    if (GMSIdentify_HasError()) {
+        document.getElementById("metadata").innerHTML = "<b>Error:</b> " + GMSIdentify_GetError();
+        return;
+    }
+    // display the results
+    if (GMSIdentify_HasResults()) {
+        var results = GMSIdentify_GetResults();
+        // display the metadata of the provided binary
+        var metaElem = document.getElementById("metadata");
+        metaElem.innerHTML = "<b>Metadata:</b><br>";
+        metaElem.innerHTML += "<b>Executable Timestamp:</b> " + new Date(results.timestamp * 1000).toUTCString() + "<br>";
+        // display matching results
+        var infoElem = document.getElementById("versioninfo");
+        infoElem.innerHTML = "<b>GMS Version:<b><br>";
+        if (results.matched) {
+            infoElem.innerHTML += "<b>Version:</b> " + results.match.version + "<br>";
+            infoElem.innerHTML += "<b>Branch:</b> " + results.match.track + "<br>";
+            infoElem.innerHTML += "<b>Architecture:</b> " + results.match.arch;
+        } else {
+            infoElem.innerHTML += "Version couldn't be detected!<br>";
+            infoElem.innerHTML += "The game could either be using a custom version, or is using YYC.";
+        }
+    } else {
+        document.getElementById("metadata").innerHTML = "Something went wrong!";
+        return;
+    }
+}
+</script>
+<h1>GMSIdentify</h1>
+<a href="https://github.com/InvoxiPlayGames/GMSIdentify">by Emma / InvoxiPlayGames on GitHub</a><br><br>
+Select a GameMaker game's EXE file to get the specific runner version it was built with.<br>
+Windows-only, does not work with games compiled with YYC (yet).<br>
+Open Local File: <input type="file" id="filepicker" accept=".exe,application/x-octet-stream" onchange='OpenFile(event)' disabled><br>
+<br>
+<span id="metadata">Loading database, please wait...</span><br>
+<span id="versioninfo"></span><br>
+<br>
+<small>This project is not affiliated with or endorsed by YoYo Games or Opera Norway AS.</small>
+<script>LoadDatabase("runnerinfo_windows.csv")</script>
