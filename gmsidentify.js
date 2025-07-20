@@ -4,7 +4,7 @@ var GMSIdentify_DBLoaded = false;
 // imports a CSV-format database
 function GMSIdentify_ImportDatabase(text) {
     GMSIdentify_VersionDB = [];
-    var textsplit = text.split("\r\n");
+    var textsplit = text.split("\n");
     var keys = textsplit[0].split(",");
     // skip 2 lines (key line and metadata line)
     for (var i = 2; i < textsplit.length; i++) {
